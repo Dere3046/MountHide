@@ -9,6 +9,7 @@
 #include <linux/printk.h>
 #include <linux/string.h>
 
+#include "core.h"
 #include "mh.h"
 
 char *hide_mounts[64] = { "/debug_ramdisk" };
@@ -49,11 +50,27 @@ static void mh_parse_uids(const char *str, int (*fn)(unsigned int))
 	}
 }
 
+static unsigned long __nocfi kr_name_to_addr(const char *name)
+{
+	if (kallrecon_klp)
+		return kallrecon_klp(name);
+	return 0;
+}
+
 static int __init mh_src_init(void)
 {
+	struct mh_cfg cfg = {
+		.resolve = kr_name_to_addr,
+	};
 	int ret, i;
 
-	ret = mh_init(NULL);
+	find_kallsyms_base();
+	if (!klnum_val || !kallrecon_klp) {
+		pr_err("[mhsrc] kallsyms recovery failed\n");
+		return -ENODATA;
+	}
+
+	ret = mh_init(&cfg);
 	if (ret) {
 		pr_err("[mhsrc] mh_init failed %d\n", ret);
 		return ret;

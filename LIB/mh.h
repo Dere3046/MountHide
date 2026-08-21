@@ -17,6 +17,7 @@ typedef bool (*mh_reader_fn_t)(void);
 typedef bool (*mh_mount_fn_t)(const void *mnt);
 
 struct mh_cfg {
+	unsigned long (*resolve)(const char *name); /* required, __nocfi wrapper of kallrecon_klp */
 	mh_reader_fn_t reader; /* NULL: default, hide from non root readers */
 	mh_mount_fn_t extra;   /* NULL: disabled */
 };

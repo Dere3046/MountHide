@@ -12,7 +12,6 @@
 #include <linux/cred.h>
 #include <linux/errno.h>
 
-#include "core.h"
 #include "hk.h"
 #include "hk_patch.h"
 #include "mh.h"
@@ -37,13 +36,6 @@ static bool own_hk;
 
 static mh_reader_fn_t reader_fn;
 static mh_mount_fn_t extra_fn;
-
-static unsigned long __nocfi mh_resolve(const char *name)
-{
-	if (kallrecon_klp)
-		return kallrecon_klp(name);
-	return 0;
-}
 
 static unsigned int allow_uids[MH_UID_MAX];
 static int allow_n;
@@ -132,24 +124,18 @@ static int __nocfi mh_mount_show(struct seq_file *m, void *v)
 
 int mh_init(const struct mh_cfg *cfg)
 {
-	struct hk_cfg hcfg = {
-		.resolve = mh_resolve,
-	};
+	struct hk_cfg hcfg;
 	int ret;
 
 	if (inited)
 		return -EALREADY;
 
-	if (cfg) {
-		reader_fn = cfg->reader;
-		extra_fn = cfg->extra;
-	}
+	if (!cfg || !cfg->resolve)
+		return -EINVAL;
 
-	find_kallsyms_base();
-	if (!mh_resolve("mounts_op")) {
-		pr_err("[mh] kallsyms recovery failed\n");
-		return -ENODATA;
-	}
+	hcfg.resolve = cfg->resolve;
+	reader_fn = cfg->reader;
+	extra_fn = cfg->extra;
 
 	ret = hk_init(&hcfg);
 	if (ret == -EALREADY) {
