@@ -29,10 +29,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Fetch deps
         run: |
-          mkdir -p deps
-          git clone --depth 1 https://github.com/Dere3046/KallRecon.git deps/KallRecon
-          git clone --depth 1 https://github.com/Dere3046/HooKern.git deps/HooKern
-          git clone --depth 1 https://github.com/Dere3046/Type_info.git deps/Type_info
+          ./scripts/fetch-deps.sh
       - name: Build
         run: make
       - uses: actions/upload-artifact@v4

@@ -8,3 +8,4 @@ out/
 *.symversions
 Module.symvers
 modules.order
+.sdk/
