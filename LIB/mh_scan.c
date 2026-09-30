@@ -11,6 +11,7 @@
 #include <linux/atomic.h>
 
 #include "hk.h"
+#include "mh.h"
 #include "mh_rule.h"
 #include "mh_ver.h"
 

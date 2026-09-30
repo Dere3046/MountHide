@@ -12,6 +12,7 @@
 #include "mh.h"
 #include "mh_rule.h"
 #include "mh_reg.h"
+#include "mh_umount.h"
 
 static int (*path_umount_p)(struct path *path, int flags);
 
@@ -27,9 +28,8 @@ int __nocfi mh_umount_path(const char *mnt, int flags)
 	if (err)
 		return err;
 
-	err = path_umount_p(&path, flags);
-	mh_path_put(&path);
-	return err;
+	/* path_umount releases the dentry and mount references itself */
+	return path_umount_p(&path, flags);
 }
 
 static int mh_umount_cb(const char *path, void *arg)
@@ -47,6 +47,11 @@ int mh_umount_all(int flags)
 		return -ENOSYS;
 
 	return mh_rule_foreach(mh_umount_cb, &flags);
+}
+
+bool mh_umount_resolved(void)
+{
+	return path_umount_p != NULL;
 }
 
 int mh_umount_resolve(unsigned long (*resolve)(const char *name))

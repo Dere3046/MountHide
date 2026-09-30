@@ -8,6 +8,9 @@
 
 #include <linux/types.h>
 
+#include "mh_gate.h"
+#include "mh_ext4.h"
+
 #define MH_UID_MAX 16
 
 /* reader rule: return true to hide hidden mounts from current reader */

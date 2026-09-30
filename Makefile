@@ -2,7 +2,7 @@ obj-m := mhsrc.o
 
 mhsrc-objs := SRC/main.o \
 	LIB/mh_core.o LIB/mh_rule.o LIB/mh_reg.o LIB/mh_scan.o \
-	LIB/mh_umount.o LIB/mh_ver.o \
+	LIB/mh_umount.o LIB/mh_ver.o LIB/mh_gate.o LIB/mh_ext4.o \
 	deps/KallRecon/lib/core.o deps/KallRecon/lib/slide.o \
 	deps/KallRecon/lib/anchor.o \
 	deps/HooKern/lib/hk.o deps/HooKern/lib/hk_ksym.o \
@@ -36,9 +36,10 @@ $(info -- MDIR: $(MDIR))
 $(info -- ODIR: $(ODIR))
 
 all:
-	make -C $(KDIR) M=$(ODIR) src=$(MDIR) modules
+	mkdir -p $(ODIR)
+	make -C $(KDIR) M=$(ODIR) src=$(MDIR) srcroot=$(MDIR) modules
 clean:
-	make -C $(KDIR) M=$(ODIR) src=$(MDIR) clean
+	make -C $(KDIR) M=$(ODIR) src=$(MDIR) srcroot=$(MDIR) clean
 
 $(obj)/%.o: $(src)/%.c $(recordmcount_source) FORCE
 	$(call if_changed_rule,cc_o_c)

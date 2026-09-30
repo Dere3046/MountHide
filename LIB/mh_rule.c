@@ -12,6 +12,7 @@
 #include <linux/errno.h>
 
 #include "mh.h"
+#include "mh_rule.h"
 #include "mh_ver.h"
 
 struct mh_entry {
@@ -173,4 +174,35 @@ int mh_rule_foreach(int (*cb)(const char *path, void *arg), void *arg)
 	spin_unlock_irqrestore(&mh_lock, flags);
 
 	return ret;
+}
+
+int mh_rule_snapshot(void *buf, int off, int max)
+{
+	char *slot = buf;
+	struct mh_entry *e;
+	int seen = 0;
+	int n = 0;
+	unsigned long flags;
+
+	if (!buf || off < 0 || max <= 0)
+		return -EINVAL;
+
+	spin_lock_irqsave(&mh_lock, flags);
+	list_for_each_entry (e, &mh_entries, list) {
+		if (seen++ < off)
+			continue;
+		if (n >= max)
+			break;
+		strscpy(slot + (size_t)n * MH_RULE_PATH_MAX, e->path,
+			MH_RULE_PATH_MAX);
+		n++;
+	}
+	spin_unlock_irqrestore(&mh_lock, flags);
+
+	return n;
+}
+
+const char *mh_rule_snapshot_at(const void *buf, int idx)
+{
+	return (const char *)buf + (size_t)idx * MH_RULE_PATH_MAX;
 }

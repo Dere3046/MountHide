@@ -11,6 +11,7 @@
 #include "hk.h"
 #include "mh.h"
 #include "mh_rule.h"
+#include "mh_reg.h"
 #include "mh_ver.h"
 
 static int (*kern_path_p)(const char *name, unsigned int flags,

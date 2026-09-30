@@ -9,5 +9,6 @@
 #include <linux/types.h>
 
 int mh_umount_resolve(unsigned long (*resolve)(const char *name));
+bool mh_umount_resolved(void);
 
 #endif

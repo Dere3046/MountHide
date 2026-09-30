@@ -19,6 +19,9 @@ static unsigned long mnt_mountpoint_off;
 static unsigned long mnt_instance_off;
 static unsigned long sb_s_list_off;
 static unsigned long sb_s_mounts_off;
+static unsigned long sb_s_type_off;
+static unsigned long inode_i_sb_off;
+static unsigned long dentry_d_inode_off;
 static unsigned long vfs_mnt_root_off;
 static unsigned long seqlock_lock_off = 4;
 static bool scan_ready;
@@ -67,6 +70,21 @@ unsigned long mh_off_sb_s_list(void)
 unsigned long mh_off_sb_s_mounts(void)
 {
 	return sb_s_mounts_off;
+}
+
+unsigned long mh_off_sb_s_type(void)
+{
+	return sb_s_type_off;
+}
+
+unsigned long mh_off_inode_i_sb(void)
+{
+	return inode_i_sb_off;
+}
+
+unsigned long mh_off_dentry_d_inode(void)
+{
+	return dentry_d_inode_off;
 }
 
 unsigned long mh_off_seqlock_lock(void)
@@ -149,8 +167,30 @@ int mh_ver_init(unsigned long (*resolve)(const char *name))
 			sb_s_mounts_off = bit_off / 8;
 		else
 			pr_info("[mh] super_block.s_mounts unavailable\n");
+		if (!ti_member_off(btf, id, "s_type", &bit_off, &bit_sz))
+			sb_s_type_off = bit_off / 8;
+		else
+			pr_info("[mh] super_block.s_type unavailable\n");
 	} else {
 		pr_info("[mh] super_block btf unavailable\n");
+	}
+
+	if (!ti_type_by_name(btf, "inode", BIT(BTF_KIND_STRUCT), &id)) {
+		if (!ti_member_off(btf, id, "i_sb", &bit_off, &bit_sz))
+			inode_i_sb_off = bit_off / 8;
+		else
+			pr_info("[mh] inode.i_sb unavailable\n");
+	} else {
+		pr_info("[mh] inode btf unavailable\n");
+	}
+
+	if (!ti_type_by_name(btf, "dentry", BIT(BTF_KIND_STRUCT), &id)) {
+		if (!ti_member_off(btf, id, "d_inode", &bit_off, &bit_sz))
+			dentry_d_inode_off = bit_off / 8;
+		else
+			pr_info("[mh] dentry.d_inode unavailable\n");
+	} else {
+		pr_info("[mh] dentry btf unavailable\n");
 	}
 
 	if (!ti_type_by_name(btf, "seqlock_t", BIT(BTF_KIND_TYPEDEF), &id)) {
@@ -168,10 +208,12 @@ int mh_ver_init(unsigned long (*resolve)(const char *name))
 	mp_dentry_off = bit_off / 8;
 
 	pr_info("[mh] offs mnt_mp=%lu mnt=%lu mntpoint=%lu instance=%lu "
-		"vfs_root=%lu s_list=%lu s_mounts=%lu mp_dentry=%lu\n",
+		"vfs_root=%lu s_list=%lu s_mounts=%lu mp_dentry=%lu "
+		"s_type=%lu i_sb=%lu d_inode=%lu\n",
 		mnt_mp_off, mnt_off, mnt_mountpoint_off, mnt_instance_off,
 		vfs_mnt_root_off, sb_s_list_off, sb_s_mounts_off,
-		mp_dentry_off);
+		mp_dentry_off, sb_s_type_off, inode_i_sb_off,
+		dentry_d_inode_off);
 
 	scan_ready = true;
 
@@ -194,6 +236,9 @@ void mh_ver_exit(void)
 	mnt_instance_off = 0;
 	sb_s_list_off = 0;
 	sb_s_mounts_off = 0;
+	sb_s_type_off = 0;
+	inode_i_sb_off = 0;
+	dentry_d_inode_off = 0;
 	vfs_mnt_root_off = 0;
 	seqlock_lock_off = 4;
 	scan_ready = false;

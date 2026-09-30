@@ -20,6 +20,9 @@ unsigned long mh_off_mnt_root(void);
 unsigned long mh_off_mnt_instance(void);
 unsigned long mh_off_sb_s_list(void);
 unsigned long mh_off_sb_s_mounts(void);
+unsigned long mh_off_sb_s_type(void);
+unsigned long mh_off_inode_i_sb(void);
+unsigned long mh_off_dentry_d_inode(void);
 unsigned long mh_off_vfs_mnt_root(void);
 unsigned long mh_off_seqlock_lock(void);
 

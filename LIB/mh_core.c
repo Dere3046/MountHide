@@ -19,6 +19,8 @@
 #include "mh_ver.h"
 #include "mh_umount.h"
 #include "mh_reg.h"
+#include "mh_gate.h"
+#include "mh_ext4.h"
 
 /* struct proc_mounts { ns(8) root(16) show(8) }, show offset is fixed */
 #define MH_PROC_MOUNTS_SHOW_OFF 24
@@ -178,6 +180,16 @@ int mh_init(const struct mh_cfg *cfg)
 		return ret;
 	}
 
+	if (mh_ext4_resolve((unsigned long (*)(const char *))hk_resolve))
+		pr_info("[mh] ext4 sysfs API unavailable\n");
+
+	/*
+	 * arming at core init with no config: the gate symbols are resolved on
+	 * demand, the domain check still has to be injected by the consumer
+	 */
+	if (mh_umount_cfg_init(NULL))
+		pr_info("[mh] gate config init failed\n");
+
 	inited = true;
 	pr_info("[mh] inited, mounts_op=%lx orig_show=%ps\n", mounts_op_addr,
 		orig_m_show);
@@ -192,6 +204,8 @@ void mh_exit(void)
 	mh_proc_disable();
 	mh_rule_clear();
 	mh_reader_reset();
+	mh_gate_exit();
+	mh_ext4_exit();
 	mh_ver_exit();
 	if (own_hk)
 		hk_exit();

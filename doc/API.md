@@ -126,3 +126,62 @@ clears both uid lists and the cfg callbacks.
 the consumer module can take these from parameters, e.g.
 `allow_uids=2000` keeps the adb shell visible while every other non
 root uid stays hidden.
+
+## Umount gate
+
+the gate decides when a hidden mountpoint is really unmounted. it only
+acts on a zygote fork, and it keys on the **old** process domain, not on
+the new uid: a su app that has already changed uid must not have its own
+data mounts torn down.
+
+**`int mh_umount_cfg_init(const struct mh_umount_cfg *cfg)`**
+
+installs the gate. `cfg->domain_check` is required and receives the cred
+to judge, a NULL callback disables the gate. `cfg->should_umount` decides
+per uid, a NULL callback means the allow list alone answers. `allow_uids`
+is an optional kuid array of `allow_n` entries. returns 0, -EINVAL on a
+bad cfg.
+
+**`int mh_umount_gate(uid_t uid, int flags)`**
+
+called from the fork path, returns 0 when the mounts are unmounted, a
+negative errno when the gate declined. it is a no op while
+`mh_umount_gate_ready()` is false.
+
+**`void mh_umount_set_module_mounted(bool mounted)`**
+
+tells the gate whether the module mounts are present at all, it stays
+idle while they are not.
+
+**`u32 mh_umount_sid(const struct cred *cred)`** / **`int mh_umount_capture_sid(void)`** / **`int mh_umount_sid_set(const struct cred *cred)`** / **`u32 mh_umount_sid_get(void)`** / **`int mh_umount_set_cred(const struct cred *cred)`**
+
+the pid 1 sid is captured once at init and compared later, so the gate
+does not need a policy lookup on the hot path.
+
+**`void mh_gate_exit(void)`**
+
+drops the gate state, call before `mh_exit`.
+
+## ext4 sysfs
+
+a module mount leaves an ext4 sysfs entry that names the backing image.
+this removes it without unmounting anything.
+
+**`int mh_ext4_resolve(unsigned long (*resolve)(const char *name))`**
+
+resolves the symbols the nuke path needs. returns 0, -ENODATA when a
+symbol is missing.
+
+**`bool mh_ext4_ready(void)`** / **`void mh_ext4_set_enabled(bool enabled)`** / **`bool mh_ext4_enabled(void)`**
+
+availability probe and the runtime switch, disabled by default.
+
+**`bool mh_ext4_is_ext4(const void *dentry)`** / **`int mh_ext4_nuke_dentry(const struct dentry *dentry)`** / **`int mh_ext4_nuke_sb(const struct super_block *sb)`** / **`int mh_ext4_nuke_path(const char *mnt)`** / **`int mh_ext4_nuke_all(void)`** / **`int mh_ext4_nuke_hidden(void)`**
+
+the nuke primitives: probe a dentry, then drop the sysfs entry for one
+dentry, one superblock, one mount path, every ext4 mount, or only the
+mounts the hide rules already cover.
+
+**`void mh_ext4_exit(void)`**
+
+drops the resolved symbols, call before `mh_exit`.
